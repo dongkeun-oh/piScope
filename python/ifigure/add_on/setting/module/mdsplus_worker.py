@@ -24,6 +24,7 @@ class_name = 'MDSplusWorker'
 menu = []  # this will be filled in method below
 method = ['onReset', 'onSetting', 'onShowStatus', 'onActivate',
           'onStartWorker', 'init', 'run_job', 'clean',
+          'check_running',
           'tree_viewer_menu']
 
 icon = 'world_link.png'
@@ -68,7 +69,9 @@ def clean(self, *args, **kargs):
 
 
 def run_job(self, a):
-    from ifigure.mdsplus.mdsscope import print_threaderror
+    def callback(self, *args, **kargs):
+        pass
+    from ifigure.mdsplus.mdsscope import print_threaderror, AnaGroup, GlobalCounter
     #self.pool = MDSWorkerPool.pool
     if self.td._pool is None:
         wx.CallAfter(print_threaderror, [
@@ -80,9 +83,14 @@ def run_job(self, a):
     import time
     while(wait < maxwait):
         time.sleep(0.5)
-        w, w_id = self.td._pool.get_worker()
-        if w is not None:
-            a.start_job(self.td._pool, w_id)
+        if self.td._pool.pool.is_any_alive():
+            ana_group = AnaGroup(True, [a])
+            gc = GlobalCounter(0, self.td)
+            ana_group.gc = gc
+            ana_group.func = callback
+            self.td._pool.pool.submit_ana_group(ana_group)
+            for _ in range(15):  
+                time.sleep(0.5)
             return
         wait = wait+1
     else:
@@ -90,6 +98,11 @@ def run_job(self, a):
                      'can not run job. waiting time exceeded max time'])
         return
 
+def check_running(self):
+   if self.td._pool.pool.is_any_alive():
+      return not self.td._pool.pool.check_ana_group_done()
+   else:
+      return False
 
 def onReset(self, e=None):
     self.td._pool.reset()
@@ -149,7 +162,6 @@ def onSetting(self, e=None):
                            style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER,
                            tip=None,
                            parent=self.td.get_app())
-
     if value[0]:
         v = value[1]
     else:
@@ -179,4 +191,5 @@ def onSetting(self, e=None):
         self.onReset()
         self.onStartWorker()
 
+    print(s)
     self.td.setvar('setting', s)

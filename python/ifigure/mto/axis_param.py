@@ -129,6 +129,9 @@ class AxisRangeParam(Memberholder):
                 kargs = {'base' + suffix: self.base,
                          'linthresh' + suffix: self.symloglin,
                          'linscale' + suffix: self.symloglinscale}
+        elif not self.scale in ['linear', 'log', 'symlog', 'logit', 'function', 'functionlog']:
+            self.scale = 'linear'
+            kargs = {}            
         else:
             kargs = {}
 

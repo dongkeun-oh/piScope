@@ -72,6 +72,7 @@ class MDSWorkerPoolBase(object):
         return None
 
     def abort_job(self):
+        import traceback
         tasks = []
         while not self.tasks.empty():
             try:
@@ -79,16 +80,22 @@ class MDSWorkerPoolBase(object):
                 self.tasks.task_done()
                 tasks.append(j)
             except:
-                import traceback
                 traceback.print_exc()
                 break
         ana_groups = []
-        for job_id, job, res in tasks:
-            if job_id in MDSWorkerPoolBase.job_list:
-                xxx = MDSWorkerPoolBase.job_list[job_id]
-                ana_group = xxx[1]()
-                ana_groups.append(ana_group)
-                del MDSWorkerPoolBase.job_list[job_id]
+        
+        for task in tasks:
+            try:
+                job_id, job, res = task #avoiding any worker without job
+            except:
+                pass
+            else:
+                if job_id in MDSWorkerPoolBase.job_list:
+                    xxx = MDSWorkerPoolBase.job_list[job_id]
+                    ana_group = xxx[1]()
+                    ana_groups.append(ana_group)
+                    del MDSWorkerPoolBase.job_list[job_id]
+                    
         print(('cancelled jobs', ana_groups))
         return ana_groups
 

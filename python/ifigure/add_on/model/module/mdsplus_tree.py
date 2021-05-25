@@ -72,6 +72,7 @@ has_private_owndir = True
 
 
 def split_str(s, pattern):
+    s = s.decode('utf-8')
     ret = re.split(pattern, s)
 
     ret2 = []
